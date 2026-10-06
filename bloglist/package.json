@@ -2,7 +2,8 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client",
-    "start": "NODE_ENV=production npm run start --prefix server"
+    "start": "NODE_ENV=production npm run start --prefix server",
+    "test": "concurrently  \"npm run start:test --prefix server\" \"npm run dev --prefix client\""
   },
   "devDependencies": {
     "concurrently": "^10.0.5"

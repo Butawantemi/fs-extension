@@ -8,12 +8,17 @@ import BlogList from "./components/BlogList";
 import Blog from "./components/Blog";
 import Notification from "./components/Notification";
 import { Box, AppBar, Button, Toolbar, Typography } from "@mui/material";
-import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
+import CustomErrorBoundary from "./components/CustomErrorBoundary";
 import { useNotification } from "./stores/NotificationStore";
 import { useBlogs } from "./stores/BlogStore";
 import { useUser } from "./stores/userStore";
 import Users from "./components/Users";
 import User from "./components/User";
+import persistentUserService from "./services/persistentUser";
+
+const BuggyComponent = () => {
+  throw new Error("something went wrong");
+};
 
 const App = () => {
   const { blogs, setBlogs } = useBlogs((state) => state);
@@ -53,16 +58,15 @@ const App = () => {
   }, [setBlogs, setUsers]);
 
   useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem("loggedBlogappUser");
-    if (loggedUserJSON) {
-      const parsedUser = JSON.parse(loggedUserJSON);
+    const loggedUser = persistentUserService.getUser();
+    if (loggedUser) {
       const initializeData = async () => {
         try {
-          blogsService.setToken(parsedUser.token);
-          setUser(parsedUser);
+          blogsService.setToken(loggedUser.token);
+          setUser(loggedUser);
         } catch (error) {
           console.error("Failed to restore session on page refresh:", error);
-          window.localStorage.removeItem("loggedBlogappUser");
+          persistentUserService.removeUser(loggedUser);
           setUser(null);
         }
       };
@@ -75,10 +79,7 @@ const App = () => {
     try {
       const loggedUser = await loginService.login({ username, password });
       setUser(loggedUser);
-      window.localStorage.setItem(
-        "loggedBlogappUser",
-        JSON.stringify(loggedUser),
-      );
+      persistentUserService.saveUser(loggedUser);
       blogsService.setToken(loggedUser.token);
       setUser(loggedUser);
       setUsername("");
@@ -137,7 +138,7 @@ const App = () => {
 
   const handleLogout = (event) => {
     event.preventDefault();
-    window.localStorage.removeItem("loggedBlogappUser");
+    persistentUserService.removeUser();
     setUser(null);
     navigate("/");
     notify("Logged out successfully");
@@ -145,8 +146,6 @@ const App = () => {
 
   const match = useMatch("/blogs/:id");
   const userMatch = useMatch("/users/:id");
-
-  console.log(userMatch?.params.id);
 
   const blog =
     match && blogs ? blogs.find((b) => b.id === match.params.id) : null;
@@ -156,7 +155,10 @@ const App = () => {
       ? users.find((u) => u.id === userMatch?.params.id)
       : null;
 
-  const style = { "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } };
+  const style = {
+    "&:hover": { bgcolor: "rgba(255,255,255,0.3)" },
+    textTransform: "none",
+  };
 
   return (
     <div>
@@ -173,16 +175,16 @@ const App = () => {
             </Typography>
 
             <Button color="inherit" component={Link} to="/" sx={style}>
-              Blogs
+              blogs
             </Button>
             {user && (
               <Button color="inherit" component={Link} to="/users" sx={style}>
-                Users
+                users
               </Button>
             )}
             {!user && (
               <Button color="inherit" component={Link} to="/login" sx={style}>
-                Login
+                login
               </Button>
             )}
             {user && (
@@ -204,16 +206,7 @@ const App = () => {
         </AppBar>
       </Box>
       <Notification message={notificationMessage} type={notificationType} />
-      <ErrorBoundary
-        fallbackRender={({ error }) => (
-          <div role="alert">
-            <h1>Something went wrong:(</h1>
-            <pre style={{ color: "red", fontSize: "1rem" }}>
-              {getErrorMessage(error)}
-            </pre>
-          </div>
-        )}
-      >
+      <CustomErrorBoundary>
         <Routes>
           <Route path="/" element={<BlogList blogs={blogs} user={user} />} />
           <Route
@@ -224,6 +217,7 @@ const App = () => {
                 removeBlog={removeBlog}
                 handleUpdateLike={handleUpdateLike}
                 user={user}
+                isBroken={blogs && blogs.length > 0 && !blog}
               />
             }
           />
@@ -256,7 +250,7 @@ const App = () => {
             }
           />
         </Routes>
-      </ErrorBoundary>
+      </CustomErrorBoundary>
     </div>
   );
 };

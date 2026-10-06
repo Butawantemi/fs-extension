@@ -22,7 +22,7 @@ const BlogList = ({ blogs }) => {
             .sort((a, b) => b.likes - a.likes)
             .map((blog) => (
               <Typography key={blog.id}>
-                <Link to={`/blogs/${blog.id}`}>{blog.url}</Link>
+                <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
               </Typography>
             ))
         )}
