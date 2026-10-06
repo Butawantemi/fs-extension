@@ -58,8 +58,6 @@ const Blog = ({ blog, handleUpdateLike, removeBlog, user }) => {
           </a>
         </Typography>
 
-        {/* 🚨 THE INTENTIONAL CRASH LINE: No optional chaining on blog.user! 
-            When blog.user is null, reading .username will crash React instantly and trip your CustomErrorBoundary! */}
         <Typography variant="h6">Added by {blog.user.username}</Typography>
 
         <Typography variant="h6">
