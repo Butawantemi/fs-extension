@@ -16,10 +16,6 @@ import Users from "./components/Users";
 import User from "./components/User";
 import persistentUserService from "./services/persistentUser";
 
-const BuggyComponent = () => {
-  throw new Error("something went wrong");
-};
-
 const App = () => {
   const { blogs, setBlogs } = useBlogs((state) => state);
   const [username, setUsername] = useState("");
@@ -217,7 +213,6 @@ const App = () => {
                 removeBlog={removeBlog}
                 handleUpdateLike={handleUpdateLike}
                 user={user}
-                isBroken={blogs && blogs.length > 0 && !blog}
               />
             }
           />

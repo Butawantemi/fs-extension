@@ -6,7 +6,7 @@ class CustomErrorBoundary extends React.Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
@@ -21,8 +21,11 @@ class CustomErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: "2rem" }}>
-          <h2>something went wrong</h2>
+        <div style={{ padding: "2rem", textAlign: "center" }}>
+          <h2>Something went wrong</h2>
+          <p style={{ color: "gray", marginTop: "0.5rem" }}>
+            A runtime rendering exception occurred.
+          </p>
         </div>
       );
     }

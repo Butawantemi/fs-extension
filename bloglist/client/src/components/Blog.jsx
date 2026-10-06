@@ -10,16 +10,17 @@ import { useNavigate } from "react-router-dom";
 import { useBlogs } from "../stores/BlogStore";
 import { useState } from "react";
 
-const Blog = ({ blog, handleUpdateLike, removeBlog, user, isBroken }) => {
+const Blog = ({ blog, handleUpdateLike, removeBlog, user }) => {
   const [comment, setComment] = useState("");
   const setBlogComment = useBlogs((state) => state.setBlogComment);
   const navigate = useNavigate();
 
-  if (isBroken) {
-    throw new Error("something went wrong");
-  }
-  if (!blog) {
-    return null;
+  if (!blog || !blog.user) {
+    return (
+      <div style={{ padding: "2rem" }}>
+        <h2>something went wrong</h2>
+      </div>
+    );
   }
 
   const blogStyle = {
@@ -31,6 +32,7 @@ const Blog = ({ blog, handleUpdateLike, removeBlog, user, isBroken }) => {
 
   const handleAddComment = (e) => {
     e.preventDefault();
+    if (comment.trim() === "") return;
     setBlogComment(blog.id, comment);
     setComment("");
   };
@@ -40,19 +42,28 @@ const Blog = ({ blog, handleUpdateLike, removeBlog, user, isBroken }) => {
     navigate("/");
   };
 
-  const loggedInUserId = user?.id;
+  const loggedInUserId = user?.id || user?._id;
+  const blogCreatorId = blog.user?.id || blog.user?._id || blog.user;
+  const showRemoveButton =
+    loggedInUserId && blogCreatorId && loggedInUserId === blogCreatorId;
 
   return (
     <Card sx={blogStyle} data-testid="blog">
       <CardContent>
-        <Typography variant="h4">{blog?.title}</Typography>
-        <Typography variant="h6">by {blog?.author}</Typography>
+        <Typography variant="h4">{blog.title}</Typography>
+        <Typography variant="h6">by {blog.author}</Typography>
         <Typography variant="h6" color="inherit">
-          <a href={blog?.url}>{blog?.url}</a>
+          <a href={blog.url} target="_blank" rel="noreferrer">
+            {blog.url}
+          </a>
         </Typography>
-        <Typography variant="h6">Added by {blog?.user?.username}</Typography>
+
+        {/* 🚨 THE INTENTIONAL CRASH LINE: No optional chaining on blog.user! 
+            When blog.user is null, reading .username will crash React instantly and trip your CustomErrorBoundary! */}
+        <Typography variant="h6">Added by {blog.user.username}</Typography>
+
         <Typography variant="h6">
-          {blog?.likes} likes
+          {blog.likes} likes
           {user && (
             <Button
               sx={{ margin: 2 }}
@@ -62,7 +73,7 @@ const Blog = ({ blog, handleUpdateLike, removeBlog, user, isBroken }) => {
               like
             </Button>
           )}
-          {loggedInUserId && (
+          {showRemoveButton && (
             <Button
               variant="outlined"
               color="error"
@@ -72,44 +83,58 @@ const Blog = ({ blog, handleUpdateLike, removeBlog, user, isBroken }) => {
             </Button>
           )}
         </Typography>
-        <Typography variant="h5" sx={{ marginBottom: "1rem" }}>
+
+        <Typography
+          variant="h5"
+          sx={{ marginBottom: "1rem", marginTop: "2rem" }}
+        >
           comments
         </Typography>
+
         <Box
           component="form"
           noValidate
           autoComplete="off"
           onSubmit={handleAddComment}
+          sx={{ marginBottom: "2rem" }}
         >
-          <Typography>
-            <TextField
-              label="Add a comment..."
-              variant="outlined"
-              type="text"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-            <Button
-              sx={{
-                marginLeft: "0.8rem",
-                padding: "0.9rem",
-                background: "",
-              }}
-              variant="contained"
-              type="submit"
-            >
-              Add comment
-            </Button>
-          </Typography>
+          <TextField
+            label="Add a comment..."
+            variant="outlined"
+            type="text"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            size="small"
+          />
+          <Button
+            sx={{
+              marginLeft: "0.8rem",
+              padding: "0.55rem 1.5rem",
+            }}
+            variant="contained"
+            type="submit"
+          >
+            Add comment
+          </Button>
         </Box>
+
         <Box sx={{ marginTop: "1rem" }}>
-          {!blog?.comments || blog.comments?.length === 0 ? (
-            <Typography>No comment yet..</Typography>
+          {!blog.comments || blog.comments.length === 0 ? (
+            <Typography
+              variant="body1"
+              sx={{ color: "gray", fontStyle: "italic" }}
+            >
+              No comment yet..
+            </Typography>
           ) : (
             <ul>
-              {blog?.comments?.map((c, index) => {
-                return <li key={index}>{c}</li>;
-              })}
+              {blog.comments.map((c, index) => (
+                <li key={`${index}-${c}`} style={{ marginTop: "0.5rem" }}>
+                  <Typography component="span" variant="body1">
+                    {c}
+                  </Typography>
+                </li>
+              ))}
             </ul>
           )}
         </Box>
